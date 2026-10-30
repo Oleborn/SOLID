@@ -7,9 +7,9 @@ import org.springframework.stereotype.Service;
 /**
  * Считает сумму для налогового отчёта.
  *
- * <p>Нюансы использования: расчёт делегируется в {@link OrderTotalCalculator}.
- * На текущий момент правила расчёта в отчёте и в счёте клиенту совпадают, поэтому
- * оба сервиса используют один калькулятор.</p>
+ * <p>Нюансы использования: расчёт делегируется в {@link TaxReportCalculator}.
+ * Сервис определяет, что для налогового отчёта нужна сумма, посчитанная по правилам
+ * {@code TaxReportCalculator} — с округлением по документу.</p>
  *
  * @author oleborn
  * @since 29.10.2026
@@ -18,13 +18,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class TaxReportService {
 
-    private final OrderTotalCalculator orderTotalCalculator;
+    private final TaxReportCalculator taxReportCalculator;
 
     /**
      * Считает сумму заказа для налогового отчёта.
      *
      * <p>Нюансы использования: сумма совпадает с той, что считает
-     * {@link OrderTotalCalculator#calculate(Order)}. Заказ должен быть загружен
+     * {@link TaxReportCalculator#calculate(Order)}. Заказ должен быть загружен
      * внутри транзакции из-за ленивой коллекции позиций.</p>
      *
      * @param order заказ, для которого считается сумма
@@ -33,6 +33,6 @@ public class TaxReportService {
      * @since 29.10.2026
      */
     public BigDecimal generateReport(Order order) {
-        return orderTotalCalculator.calculate(order);
+        return taxReportCalculator.calculate(order);
     }
 }
