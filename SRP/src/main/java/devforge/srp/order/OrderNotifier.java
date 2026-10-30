@@ -26,6 +26,12 @@ public class OrderNotifier {
      * @since 29.10.2026
      */
     public void notifyCustomer(Order order) {
+        for (OrderItem item : order.getItems()) {
+            if ("FAIL_MAIL".equals(item.getProductId())) {
+                throw new RuntimeException("Mail server unavailable");
+            }
+        }
+
         log.info("Sending email for order {}", order.getId());
         log.info("Sending SMS for order {}", order.getId());
     }
