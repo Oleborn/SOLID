@@ -7,10 +7,9 @@ import org.springframework.stereotype.Service;
 /**
  * Считает сумму к оплате по заказу.
  *
- * <p>Нюансы использования: расчёт делегируется в {@link OrderTotalCalculator}.
- * После вынесения общего метода сервис не содержит собственной формулы, но именно
- * он определяет, что для счёта клиенту нужна сумма, посчитанная по правилам
- * {@code OrderTotalCalculator}.</p>
+ * <p>Нюансы использования: расчёт делегируется в {@link InvoiceCalculator}.
+ * Сервис определяет, что для счёта клиенту нужна сумма, посчитанная по правилам
+ * {@code InvoiceCalculator} — с округлением по строкам.</p>
  *
  * @author oleborn
  * @since 29.10.2026
@@ -19,13 +18,13 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class InvoiceService {
 
-    private final OrderTotalCalculator orderTotalCalculator;
+    private final InvoiceCalculator invoiceCalculator;
 
     /**
      * Считает итоговую сумму заказа для счёта клиенту.
      *
      * <p>Нюансы использования: сумма совпадает с той, что считает
-     * {@link OrderTotalCalculator#calculate(Order)}. Заказ должен быть загружен
+     * {@link InvoiceCalculator#calculate(Order)}. Заказ должен быть загружен
      * внутри транзакции из-за ленивой коллекции позиций.</p>
      *
      * @param order заказ, для которого считается сумма
@@ -34,6 +33,6 @@ public class InvoiceService {
      * @since 29.10.2026
      */
     public BigDecimal generateInvoice(Order order) {
-        return orderTotalCalculator.calculate(order);
+        return invoiceCalculator.calculate(order);
     }
 }
