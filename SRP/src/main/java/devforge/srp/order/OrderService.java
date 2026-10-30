@@ -9,9 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Работа с заказами: создание и чтение.
  *
- * <p>Нюансы использования: сервис не считает суммы, расчёт живёт в
- * {@link InvoiceService}. Зависимости передаются через конструктор, который
- * генерирует Lombok.</p>
+ * <p>Нюансы использования: при создании заказа сервис не только сохраняет его,
+ * но и вызывает уведомления, начисление баллов и запись в журнал аудита. Все
+ * эти действия выполняются внутри одного метода и одной транзакции.</p>
  *
  * @author oleborn
  * @since 29.10.2026
@@ -21,13 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final OrderNotifier orderNotifier;
+    private final LoyaltyService loyaltyService;
+    private final AuditLog auditLog;
 
     /**
-     * Создаёт и сохраняет заказ с переданными позициями.
+     * Создаёт заказ, сохраняет его и выполняет связанные действия.
      *
-     * <p>Нюансы использования: позиции сохраняются каскадом, отдельно их сохранять
-     * не нужно. Метод выполняется в транзакции и возвращает уже сохранённый заказ
-     * с проставленными идентификатором и датой создания.</p>
+     * <p>Нюансы использования: после сохранения вызываются уведомления, начисление
+     * баллов и аудит. Все вызовы происходят в одной транзакции, поэтому ошибка
+     * любого из них откатит и сам заказ.</p>
      *
      * @param items позиции будущего заказа
      * @return сохранённый заказ
@@ -42,7 +45,13 @@ public class OrderService {
             order.addItem(item);
         }
 
-        return orderRepository.save(order);
+        Order saved = orderRepository.save(order);
+
+        orderNotifier.notifyCustomer(saved);
+        loyaltyService.accruePoints(saved);
+        auditLog.writeOrderCreated(saved);
+
+        return saved;
     }
 
     /**
