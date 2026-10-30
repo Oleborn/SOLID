@@ -3,6 +3,7 @@ package devforge.srp.order;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
     private final OrderRepository orderRepository;
@@ -47,6 +49,7 @@ public class OrderService {
 
         Order saved = orderRepository.save(order);
 
+        log.warn("Support: overriding email channel with SMS for order {}", saved.getId());
         orderNotifier.notifyCustomer(saved);
         loyaltyService.accruePoints(saved);
         auditLog.writeOrderCreated(saved);
