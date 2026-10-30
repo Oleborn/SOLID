@@ -57,23 +57,23 @@ public class OrderController {
     /**
      * Возвращает заказ по идентификатору.
      *
-     * <p>Нюансы использования: если заказа нет, отвечает 404 Not Found.</p>
+     * <p>Нюансы использования: временно возвращает сущность напрямую, чтобы мобильное
+     * приложение получило список заказов как можно быстрее. Закупочная цена при этом
+     * попадает в ответ.</p>
      *
      * @param id идентификатор заказа
-     * @return заказ вместе с посчитанной суммой
+     * @return заказ вместе с позициями
      * @author oleborn
      * @since 29.10.2026
      */
     @GetMapping("/{id}")
-    public OrderResponse get(
+    public Order get(
             @PathVariable Long id
     ) {
-        Order order = orderService.findById(id)
-            .orElseThrow(
-                    () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
-            );
-
-        return toResponse(order);
+        return orderService.findById(id)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
+                );
     }
 
     /**
