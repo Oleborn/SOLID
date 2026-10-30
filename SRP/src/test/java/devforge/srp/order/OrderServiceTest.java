@@ -10,13 +10,15 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Тесты сохранения и чтения заказов на реальном JPA-контексте.
  *
  * <p>Нюансы использования: каждый тест выполняется в транзакции и откатывается,
- * поэтому данные в H2 не накапливаются.</p>
+ * поэтому данные в H2 не накапливаются. Внешние действия при создании заказа
+ * замоканы, чтобы тест не зависел от почтового сервера и маркетинга.</p>
  *
  * @author oleborn
  * @since 29.10.2026
@@ -27,6 +29,15 @@ class OrderServiceTest {
 
     @Autowired
     private OrderService orderService;
+
+    @MockitoBean
+    private OrderNotifier orderNotifier;
+
+    @MockitoBean
+    private LoyaltyService loyaltyService;
+
+    @MockitoBean
+    private AuditLog auditLog;
 
     /**
      * Проверяет каскадное сохранение заказа и последующее чтение по идентификатору.
@@ -58,9 +69,6 @@ class OrderServiceTest {
     /**
      * Создаёт позицию заказа для теста.
      *
-     * <p>Нюансы использования: позиция не сохраняется в базе, её сохранит каскад
-     * при создании заказа.</p>
-     *
      * @param productId идентификатор товара
      * @param price цена продажи за единицу
      * @param quantity количество единиц товара
@@ -69,9 +77,9 @@ class OrderServiceTest {
      * @since 29.10.2026
      */
     private OrderItem item(
-        String productId,
-        BigDecimal price,
-        int quantity
+            String productId,
+            BigDecimal price,
+            int quantity
     ) {
         OrderItem item = new OrderItem();
 
