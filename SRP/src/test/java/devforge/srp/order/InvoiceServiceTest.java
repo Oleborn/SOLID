@@ -16,7 +16,8 @@ import org.junit.jupiter.api.Test;
  */
 class InvoiceServiceTest {
 
-    private final InvoiceService invoiceService = new InvoiceService();
+    private final InvoiceService invoiceService =
+            new InvoiceService(new OrderTotalCalculator());
 
     /**
      * Проверяет округление цены позиции до умножения на количество.

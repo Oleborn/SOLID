@@ -1,27 +1,32 @@
 package devforge.srp.order;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 /**
  * Считает сумму к оплате по заказу.
  *
- * <p>Нюансы использования: округление выполняется по каждой строке отдельно, поэтому
- * итог может отличаться от округления суммы "сырых" значений.</p>
+ * <p>Нюансы использования: расчёт делегируется в {@link OrderTotalCalculator}.
+ * После вынесения общего метода сервис не содержит собственной формулы, но именно
+ * он определяет, что для счёта клиенту нужна сумма, посчитанная по правилам
+ * {@code OrderTotalCalculator}.</p>
  *
  * @author oleborn
  * @since 29.10.2026
  */
 @Service
+@RequiredArgsConstructor
 public class InvoiceService {
 
+    private final OrderTotalCalculator orderTotalCalculator;
+
     /**
-     * Считает итоговую сумму заказа с округлением цены каждой позиции до копеек.
+     * Считает итоговую сумму заказа для счёта клиенту.
      *
-     * <p>Нюансы использования: цена позиции округляется до двух знаков до умножения
-     * на количество, итог тоже приводится к двум знакам. Расчёт опирается на ленивую
-     * коллекцию позиций, поэтому заказ должен быть загружен внутри транзакции.</p>
+     * <p>Нюансы использования: сумма совпадает с той, что считает
+     * {@link OrderTotalCalculator#calculate(Order)}. Заказ должен быть загружен
+     * внутри транзакции из-за ленивой коллекции позиций.</p>
      *
      * @param order заказ, для которого считается сумма
      * @return итоговая сумма заказа с масштабом 2
@@ -29,15 +34,6 @@ public class InvoiceService {
      * @since 29.10.2026
      */
     public BigDecimal generateInvoice(Order order) {
-        BigDecimal total = BigDecimal.ZERO;
-
-        for (OrderItem item : order.getItems()) {
-            BigDecimal unitPrice = item.getPrice().setScale(2, RoundingMode.HALF_UP);
-            BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.getQuantity()));
-
-            total = total.add(lineTotal);
-        }
-
-        return total.setScale(2, RoundingMode.HALF_UP);
+        return orderTotalCalculator.calculate(order);
     }
 }
