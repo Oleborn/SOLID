@@ -1,9 +1,7 @@
 package devforge.srp.order;
 
-import devforge.srp.order.dto.OrderItemRequest;
-import devforge.srp.order.dto.OrderItemResponse;
-import devforge.srp.order.dto.OrderRequest;
-import devforge.srp.order.dto.OrderResponse;
+import devforge.srp.order.dto.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +32,7 @@ public class OrderController {
 
     private final OrderService orderService;
     private final InvoiceService invoiceService;
+    private final TaxReportService taxReportService;
 
     /**
      * Создаёт заказ по запросу от администратора.
@@ -75,6 +74,29 @@ public class OrderController {
             );
 
         return toResponse(order);
+    }
+
+    /**
+     * Возвращает налоговый отчёт по заказу.
+     *
+     * <p>Нюансы использования: если заказа нет, отвечает 404 Not Found. Сумма
+     * считается через {@link TaxReportService}, контроллер её не дублирует.</p>
+     *
+     * @param id идентификатор заказа
+     * @return отчёт с посчитанной суммой
+     * @author oleborn
+     * @since 29.10.2026
+     */
+    @GetMapping("/{id}/tax-report")
+    public TaxReportResponse taxReport(
+            @PathVariable Long id
+    ) {
+        Order order = orderService.findById(id)
+                .orElseThrow(
+                        () -> new ResponseStatusException(HttpStatus.NOT_FOUND)
+                );
+
+        return new TaxReportResponse(order.getId(), taxReportService.generateReport(order));
     }
 
     /**
