@@ -7,9 +7,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /**
  * Репозиторий заказов.
  *
- * <p>Нюансы использования: {@link #findById(Object)} переопределён, чтобы
- * загружать позиции заказа одним запросом. Без этого при возврате сущности
- * напрямую в API возникает {@code LazyInitializationException}.</p>
+ * <p>Нюансы использования: {@link #findById(Object)} загружает позиции заказа
+ * одним запросом, чтобы {@link OrderMapper} мог собрать DTO без обращения к
+ * ленивой коллекции вне транзакции.</p>
  *
  * @author oleborn
  * @since 29.10.2026
