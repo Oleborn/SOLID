@@ -3,15 +3,16 @@ package devforge.srp.order;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Работа с заказами: создание и чтение.
+ * Создаёт и читает заказы.
  *
- * <p>Нюансы использования: при создании заказа сервис не только сохраняет его,
- * но и вызывает уведомления, начисление баллов и запись в журнал аудита. Все
- * эти действия выполняются внутри одного метода и одной транзакции.</p>
+ * <p>Нюансы использования: сервис отвечает только за сохранение заказа и публикацию
+ * события о его создании. Уведомления, баллы и аудит — это отдельные подписчики,
+ * которые получают событие после коммита и не влияют на сохранение заказа.</p>
  *
  * @author oleborn
  * @since 29.10.2026
@@ -21,16 +22,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
 
     private final OrderRepository orderRepository;
-    private final OrderNotifier orderNotifier;
-    private final LoyaltyService loyaltyService;
-    private final AuditLog auditLog;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * Создаёт заказ, сохраняет его и выполняет связанные действия.
+     * Создаёт заказ, сохраняет его и публикует событие о создании.
      *
-     * <p>Нюансы использования: после сохранения вызываются уведомления, начисление
-     * баллов и аудит. Все вызовы происходят в одной транзакции, поэтому ошибка
-     * любого из них откатит и сам заказ.</p>
+     * <p>Нюансы использования: событие публикуется внутри транзакции, подписчики
+     * получают его после успешного коммита. Ошибка подписчика логируется, но не
+     * откатывает заказ.</p>
      *
      * @param items позиции будущего заказа
      * @return сохранённый заказ
@@ -46,20 +45,13 @@ public class OrderService {
         }
 
         Order saved = orderRepository.save(order);
-
-        orderNotifier.notifyCustomer(saved);
-        loyaltyService.accruePoints(saved);
-        auditLog.writeOrderCreated(saved);
+        eventPublisher.publishEvent(new OrderCreatedEvent(saved));
 
         return saved;
     }
 
     /**
      * Ищет заказ по идентификатору.
-     *
-     * <p>Нюансы использования: метод не открывает транзакцию, поэтому ленивая
-     * коллекция позиций доступна только в том случае, если заказ загружен
-     * внутри вызывающей транзакции.</p>
      *
      * @param id идентификатор заказа
      * @return заказ, если он существует
