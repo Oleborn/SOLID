@@ -13,6 +13,10 @@ public class DiscountService {
 
         if ("PERCENTAGE".equals(type)) {
             total = total.multiply(new BigDecimal("0.9"));
+        } else if ("FIXED".equals(type)) {
+            if (total.compareTo(new BigDecimal("5000")) >= 0) {
+                total = total.subtract(new BigDecimal("500"));
+            }
         }
 
         return total;

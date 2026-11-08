@@ -28,6 +28,22 @@ class DiscountServiceTest {
         assertEquals(0, service.calculate(order, "PERCENTAGE").compareTo(new BigDecimal("180.00")));
     }
 
+    @Test
+    void appliesFixedDiscountWhenThresholdReached() {
+        Order order = new Order();
+        order.addItem(item("A", "6000.00", 1));
+
+        assertEquals(0, service.calculate(order, "FIXED").compareTo(new BigDecimal("5500.00")));
+    }
+
+    @Test
+    void skipsFixedDiscountBelowThreshold() {
+        Order order = new Order();
+        order.addItem(item("A", "1000.00", 1));
+
+        assertEquals(0, service.calculate(order, "FIXED").compareTo(new BigDecimal("1000.00")));
+    }
+
     private OrderItem item(String productId, String price, int quantity) {
         OrderItem item = new OrderItem();
         item.setProductId(productId);
