@@ -5,7 +5,9 @@ import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FirstOrderPercentageDiscount extends PercentageDiscount {
+public class FirstOrderPercentageDiscount implements Discount {
+
+    private final PercentageDiscount base = new PercentageDiscount();
 
     @Override
     public String type() {
@@ -20,7 +22,7 @@ public class FirstOrderPercentageDiscount extends PercentageDiscount {
     @Override
     public BigDecimal apply(Order order, BigDecimal total) {
         if (order.isFirstOrder()) {
-            return super.apply(order, total);
+            return base.apply(order, total);
         }
         return total;
     }

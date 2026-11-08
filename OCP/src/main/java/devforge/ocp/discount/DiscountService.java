@@ -1,5 +1,6 @@
 package devforge.ocp.discount;
 
+import devforge.ocp.discount.inheritance.CombinedDiscount;
 import devforge.ocp.discount.inheritance.Discount;
 import devforge.ocp.order.Order;
 import devforge.ocp.order.OrderItem;
@@ -27,6 +28,15 @@ public class DiscountService {
             return total;
         }
         return discount.apply(order, total);
+    }
+
+    public BigDecimal applyCombined(Order order, List<String> types) {
+        BigDecimal total = sumItems(order);
+        List<Discount> chain = types.stream()
+                .map(discounts::get)
+                .filter(d -> d != null)
+                .toList();
+        return new CombinedDiscount(chain).apply(order, total);
     }
 
     private BigDecimal sumItems(Order order) {

@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import org.springframework.stereotype.Component;
 
 @Component
-public class FixedDiscount extends Discount {
+public class FixedDiscount implements Discount {
 
     @Override
     public String type() {
