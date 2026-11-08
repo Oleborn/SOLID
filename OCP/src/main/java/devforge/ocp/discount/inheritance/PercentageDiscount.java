@@ -19,6 +19,9 @@ public class PercentageDiscount extends Discount {
 
     @Override
     public BigDecimal apply(Order order, BigDecimal total) {
+        if (total.compareTo(new BigDecimal("1000")) < 0) {
+            return total;
+        }
         return total.multiply(new BigDecimal("0.9"));
     }
 }
