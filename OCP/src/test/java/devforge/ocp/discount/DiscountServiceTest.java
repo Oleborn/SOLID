@@ -20,6 +20,14 @@ class DiscountServiceTest {
         assertEquals(0, service.calculate(order, "NONE").compareTo(new BigDecimal("250.00")));
     }
 
+    @Test
+    void appliesPercentageDiscount() {
+        Order order = new Order();
+        order.addItem(item("A", "100.00", 2));
+
+        assertEquals(0, service.calculate(order, "PERCENTAGE").compareTo(new BigDecimal("180.00")));
+    }
+
     private OrderItem item(String productId, String price, int quantity) {
         OrderItem item = new OrderItem();
         item.setProductId(productId);
