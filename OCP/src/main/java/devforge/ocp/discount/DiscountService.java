@@ -2,8 +2,9 @@ package devforge.ocp.discount;
 
 import devforge.ocp.order.Order;
 import devforge.ocp.order.OrderItem;
-import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
 
 @Service
 public class DiscountService {
@@ -12,21 +13,24 @@ public class DiscountService {
         BigDecimal total = sumItems(order);
 
         switch (type) {
-            case "PERCENTAGE":
-                total = total.multiply(new BigDecimal("0.9"));
-                break;
-            case "FIXED":
+            case "PERCENTAGE" -> total = total.multiply(new BigDecimal("0.9"));
+            case "FIXED" -> {
                 if (total.compareTo(new BigDecimal("5000")) >= 0) {
                     total = total.subtract(new BigDecimal("500"));
                 }
-                break;
-            case "THRESHOLD":
+            }
+            case "THRESHOLD" -> {
                 if (total.compareTo(new BigDecimal("1000")) > 0) {
                     total = total.multiply(new BigDecimal("0.95"));
                 }
-                break;
-            default:
-                // без скидки
+            }
+            case "FIRST_ORDER" -> {
+                if (order.isFirstOrder()) {
+                    total = total.multiply(new BigDecimal("0.9"));
+                }
+            }
+            case "NONE" -> {}
+            default -> throw new IllegalArgumentException("Unknown type: " + type);
         }
 
         return total;

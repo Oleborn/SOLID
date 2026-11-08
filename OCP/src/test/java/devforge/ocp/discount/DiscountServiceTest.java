@@ -60,6 +60,21 @@ class DiscountServiceTest {
         assertEquals(0, service.calculate(order, "THRESHOLD").compareTo(new BigDecimal("1000.00")));
     }
 
+    @Test
+    void appliesFirstOrderDiscountOnlyForFirstOrder() {
+        Order order = new Order();
+        order.setFirstOrder(true);
+        order.addItem(item("A", "1000.00", 1));
+
+        assertEquals(0, service.calculate(order, "FIRST_ORDER").compareTo(new BigDecimal("900.00")));
+
+        Order regular = new Order();
+        regular.setFirstOrder(false);
+        regular.addItem(item("A", "1000.00", 1));
+
+        assertEquals(0, service.calculate(regular, "FIRST_ORDER").compareTo(new BigDecimal("1000.00")));
+    }
+
     private OrderItem item(String productId, String price, int quantity) {
         OrderItem item = new OrderItem();
         item.setProductId(productId);
