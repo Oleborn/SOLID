@@ -17,7 +17,7 @@ class DiscountServiceTest {
         order.addItem(item("A", "100.00", 2));
         order.addItem(item("B", "50.00", 1));
 
-        assertEquals(0, service.calculate(order).compareTo(new BigDecimal("250.00")));
+        assertEquals(0, service.calculate(order, "NONE").compareTo(new BigDecimal("250.00")));
     }
 
     private OrderItem item(String productId, String price, int quantity) {
