@@ -1,30 +1,25 @@
 package devforge.ocp.discount;
 
-import java.util.List;
-
 import devforge.ocp.discount.dto.DiscountTypeInfo;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DiscountCatalogService {
 
-    public List<DiscountTypeInfo> list() {
-        return List.of(
-            describe("PERCENTAGE"),
-            describe("FIXED"),
-            describe("THRESHOLD"),
-            describe("FIRST_ORDER")
-        );
+    private final DiscountService discountService;
+
+    public DiscountCatalogService(DiscountService discountService) {
+        this.discountService = discountService;
     }
 
-    public DiscountTypeInfo describe(String type) {
-        return switch (type) {
-            case "PERCENTAGE" -> new DiscountTypeInfo("PERCENTAGE", "10% off everything");
-            case "FIXED" -> new DiscountTypeInfo("FIXED", "500 off orders over 5000");
-            case "THRESHOLD" -> new DiscountTypeInfo("THRESHOLD", "5% off orders over 1000");
-            case "FIRST_ORDER" -> new DiscountTypeInfo("FIRST_ORDER", "10% off first order");
-            case "NONE" -> new DiscountTypeInfo("NONE", "no discount");
-            default -> throw new IllegalArgumentException("Unknown type: " + type);
-        };
+    public List<DiscountTypeInfo> list() {
+        return discountService.availableTypes().stream()
+                .map(this::toInfo)
+                .toList();
+    }
+
+    public DiscountTypeInfo toInfo(String type) {
+        return new DiscountTypeInfo(type, discountService.descriptionOf(type));
     }
 }

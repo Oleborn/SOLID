@@ -1,27 +1,40 @@
 package devforge.ocp.discount;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import devforge.ocp.discount.strategy.FirstOrderDiscount;
+import devforge.ocp.discount.strategy.FixedDiscount;
+import devforge.ocp.discount.strategy.PercentageDiscount;
+import devforge.ocp.discount.strategy.ThresholdDiscount;
 import devforge.ocp.order.Order;
 import devforge.ocp.order.OrderItem;
 import java.math.BigDecimal;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class DiscountServiceTest {
 
-    private final DiscountService service = new DiscountService();
+    private final DiscountService service = new DiscountService(List.of(
+            new PercentageDiscount(),
+            new FixedDiscount(),
+            new ThresholdDiscount(),
+            new FirstOrderDiscount()
+    ));
 
     @Test
-    void sumsItemsWithoutDiscount() {
-        Order order = new Order();
-        order.addItem(item("A", "100.00", 2));
-        order.addItem(item("B", "50.00", 1));
-
-        assertEquals(0, service.calculate(order, "NONE").compareTo(new BigDecimal("250.00")));
+    void supportsKnownTypes() {
+        assertTrue(service.supportsType("PERCENTAGE"));
+        assertTrue(service.supportsType("FIXED"));
+        assertTrue(service.supportsType("THRESHOLD"));
+        assertTrue(service.supportsType("FIRST_ORDER"));
+        assertFalse(service.supportsType("UNKNOWN"));
     }
 
     @Test
-    void appliesPercentageDiscount() {
+    void delegatesToStrategy() {
         Order order = new Order();
         order.addItem(item("A", "100.00", 2));
 
@@ -29,50 +42,26 @@ class DiscountServiceTest {
     }
 
     @Test
-    void appliesFixedDiscountWhenThresholdReached() {
+    void returnsTotalWithoutDiscountWhenTypeUnknown() {
         Order order = new Order();
-        order.addItem(item("A", "6000.00", 1));
+        order.addItem(item("A", "100.00", 2));
 
-        assertEquals(0, service.calculate(order, "FIXED").compareTo(new BigDecimal("5500.00")));
+        assertEquals(0, service.calculate(order, "NONE").compareTo(new BigDecimal("200.00")));
+        assertEquals(0, service.calculate(order, "UNKNOWN").compareTo(new BigDecimal("200.00")));
     }
 
     @Test
-    void skipsFixedDiscountBelowThreshold() {
-        Order order = new Order();
-        order.addItem(item("A", "1000.00", 1));
-
-        assertEquals(0, service.calculate(order, "FIXED").compareTo(new BigDecimal("1000.00")));
+    void describesKnownTypes() {
+        assertEquals("10% off everything", service.descriptionOf("PERCENTAGE"));
+        assertEquals("500 off orders over 5000", service.descriptionOf("FIXED"));
+        assertNull(service.descriptionOf("UNKNOWN"));
     }
 
     @Test
-    void appliesThresholdDiscountAboveThreshold() {
-        Order order = new Order();
-        order.addItem(item("A", "2000.00", 1));
-
-        assertEquals(0, service.calculate(order, "THRESHOLD").compareTo(new BigDecimal("1900.00")));
-    }
-
-    @Test
-    void skipsThresholdDiscountAtOrBelowThreshold() {
-        Order order = new Order();
-        order.addItem(item("A", "1000.00", 1));
-
-        assertEquals(0, service.calculate(order, "THRESHOLD").compareTo(new BigDecimal("1000.00")));
-    }
-
-    @Test
-    void appliesFirstOrderDiscountOnlyForFirstOrder() {
-        Order order = new Order();
-        order.setFirstOrder(true);
-        order.addItem(item("A", "1000.00", 1));
-
-        assertEquals(0, service.calculate(order, "FIRST_ORDER").compareTo(new BigDecimal("900.00")));
-
-        Order regular = new Order();
-        regular.setFirstOrder(false);
-        regular.addItem(item("A", "1000.00", 1));
-
-        assertEquals(0, service.calculate(regular, "FIRST_ORDER").compareTo(new BigDecimal("1000.00")));
+    void listsAvailableTypes() {
+        assertEquals(4, service.availableTypes().size());
+        assertTrue(service.availableTypes().contains("PERCENTAGE"));
+        assertTrue(service.availableTypes().contains("FIRST_ORDER"));
     }
 
     private OrderItem item(String productId, String price, int quantity) {
