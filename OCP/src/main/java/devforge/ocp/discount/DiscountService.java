@@ -11,12 +11,22 @@ public class DiscountService {
     public BigDecimal calculate(Order order, String type) {
         BigDecimal total = sumItems(order);
 
-        if ("PERCENTAGE".equals(type)) {
-            total = total.multiply(new BigDecimal("0.9"));
-        } else if ("FIXED".equals(type)) {
-            if (total.compareTo(new BigDecimal("5000")) >= 0) {
-                total = total.subtract(new BigDecimal("500"));
-            }
+        switch (type) {
+            case "PERCENTAGE":
+                total = total.multiply(new BigDecimal("0.9"));
+                break;
+            case "FIXED":
+                if (total.compareTo(new BigDecimal("5000")) >= 0) {
+                    total = total.subtract(new BigDecimal("500"));
+                }
+                break;
+            case "THRESHOLD":
+                if (total.compareTo(new BigDecimal("1000")) > 0) {
+                    total = total.multiply(new BigDecimal("0.95"));
+                }
+                break;
+            default:
+                // без скидки
         }
 
         return total;
