@@ -17,13 +17,6 @@ public class DiscountController {
     @PostMapping("/calculate")
     public DiscountResponse calculate(@RequestBody DiscountRequest request) {
         Order order = requestMapper.toOrder(request);
-        boolean hasPromoCode = request.promoCode() != null && !request.promoCode().isBlank();
-        return new DiscountResponse(discountService.calculate(
-                order,
-                request.firstOrder(),
-                request.secondItem(),
-                hasPromoCode,
-                request.holiday()
-        ));
+        return new DiscountResponse(discountService.calculate(order));
     }
 }

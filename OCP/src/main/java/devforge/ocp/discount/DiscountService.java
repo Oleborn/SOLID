@@ -1,33 +1,31 @@
 package devforge.ocp.discount;
 
+import devforge.ocp.discount.rule.DiscountRule;
 import devforge.ocp.order.Order;
 import devforge.ocp.order.OrderItem;
 import java.math.BigDecimal;
+import java.util.Comparator;
+import java.util.List;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DiscountService {
 
-    public BigDecimal calculate(Order order,
-                                boolean isFirstOrder,
-                                boolean isSecondItem,
-                                boolean hasPromoCode,
-                                boolean isHoliday) {
+    private final List<DiscountRule> rules;
+
+    public DiscountService(List<DiscountRule> rules) {
+        this.rules = rules.stream()
+                .sorted(Comparator.comparingInt(DiscountRule::priority))
+                .toList();
+    }
+
+    public BigDecimal calculate(Order order) {
         BigDecimal total = sumItems(order);
-
-        if (isFirstOrder) {
-            total = total.multiply(new BigDecimal("0.9"));
+        for (DiscountRule rule : rules) {
+            if (rule.isApplicable(order)) {
+                total = rule.apply(order, total);
+            }
         }
-        if (isSecondItem) {
-            total = total.multiply(new BigDecimal("0.95"));
-        }
-        if (hasPromoCode) {
-            total = total.subtract(new BigDecimal("200"));
-        }
-        if (isHoliday) {
-            total = total.multiply(new BigDecimal("0.85"));
-        }
-
         return total;
     }
 

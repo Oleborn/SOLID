@@ -6,8 +6,6 @@ public record DiscountRequest(
         List<DiscountItemRequest> items,
         String type,
         boolean firstOrder,
-        boolean secondItem,
-        String promoCode,
-        boolean holiday
+        String promoCode
 ) {
 }
