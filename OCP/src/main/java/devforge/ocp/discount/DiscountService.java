@@ -1,39 +1,47 @@
 package devforge.ocp.discount;
 
+import devforge.ocp.discount.strategy.DiscountStrategy;
 import devforge.ocp.order.Order;
 import devforge.ocp.order.OrderItem;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
 
 @Service
 public class DiscountService {
 
+    private final Map<String, DiscountStrategy> strategies;
+
+    public DiscountService(List<DiscountStrategy> strategies) {
+        this.strategies = strategies.stream()
+                .collect(Collectors.toMap(DiscountStrategy::type, Function.identity()));
+    }
+
     public BigDecimal calculate(Order order, String type) {
         BigDecimal total = sumItems(order);
-
-        switch (type) {
-            case "PERCENTAGE" -> total = total.multiply(new BigDecimal("0.9"));
-            case "FIXED" -> {
-                if (total.compareTo(new BigDecimal("5000")) >= 0) {
-                    total = total.subtract(new BigDecimal("500"));
-                }
-            }
-            case "THRESHOLD" -> {
-                if (total.compareTo(new BigDecimal("1000")) > 0) {
-                    total = total.multiply(new BigDecimal("0.95"));
-                }
-            }
-            case "FIRST_ORDER" -> {
-                if (order.isFirstOrder()) {
-                    total = total.multiply(new BigDecimal("0.9"));
-                }
-            }
-            case "NONE" -> {}
-            default -> throw new IllegalArgumentException("Unknown type: " + type);
+        DiscountStrategy strategy = strategies.get(type);
+        if (strategy == null) {
+            return total;
         }
+        return strategy.apply(order, total);
+    }
 
-        return total;
+    public boolean supportsType(String type) {
+        return strategies.containsKey(type);
+    }
+
+    public List<String> availableTypes() {
+        return strategies.values().stream()
+                .map(DiscountStrategy::type)
+                .toList();
+    }
+
+    public String descriptionOf(String type) {
+        DiscountStrategy strategy = strategies.get(type);
+        return strategy != null ? strategy.description() : null;
     }
 
     private BigDecimal sumItems(Order order) {
